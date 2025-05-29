@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>OpHop</string>
+	<string>ophopapp</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -33,7 +33,13 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Allow the app to access your location while in use</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Allow the app to use Bluetooth</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Allow the app to discover and connect to Bluetooth peripherals</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Allow the app to access your location</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
@@ -48,5 +54,25 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>FacebookAppID</key>
+	<string>1975469632391920</string>
+	<key>FacebookClientToken</key>
+	<string>596616160118107</string>
+	<key>FacebookDisplayName</key>
+	<string>ophopapp</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fbapi</string>
+		<string>fb-messenger-share-api</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fb1975469632391920</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

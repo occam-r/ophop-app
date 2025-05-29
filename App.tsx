@@ -1,131 +1,73 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import { View, Text } from "react-native";
+import React, { useEffect } from "react";
+import Navigation_Comp from "./screens/Navigation_Comp";
+import "react-native-gesture-handler";
+import { Provider } from "react-redux";
+import { persistor, store } from "./redux_prog/store/store";
+import BootSplash from "react-native-bootsplash";
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import { PersistGate } from "redux-persist/integration/react";
+import { StripeProvider } from "@stripe/stripe-react-native";
+import { initializeFacebookSDK } from "./src/services/facebookInit";
+import { configureGoogleSignIn } from "./src/services/googleAuth";
 import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+  requestUserPermission,
+  getFCMToken,
+  onMessageReceived,
+  onNotificationOpenedApp,
+  checkInitialNotification,
+  setupNotificationChannels
+} from "./src/services/notificationHandler";
+// import Appp from "././Pratyaksh/Appp";
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
+const App = () => {
+  useEffect(() => {
+    // Initialize Facebook SDK
+    initializeFacebookSDK();
+    
+    // Initialize Google Sign-In
+    configureGoogleSignIn();
+    
+    // Initialize notifications
+    const initializeNotifications = async () => {
+      await requestUserPermission();
+      await setupNotificationChannels();
+      const token = await getFCMToken();
+      console.log('FCM Token:', token);
+      
+      // Set up notification listeners
+      const unsubscribe = onMessageReceived();
+      const unsubscribeOpened = onNotificationOpenedApp();
+      
+      // Check for initial notification
+      await checkInitialNotification();
+      
+      // Cleanup listeners on unmount
+      return () => {
+        unsubscribe();
+        unsubscribeOpened();
+      };
+    };
+    
+    initializeNotifications();
+    
+    setTimeout(() => {
+      BootSplash.hide({ fade: true });
+    }, 500);
+  }, []);
 
   return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </View>
+    <>
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <StripeProvider publishableKey="pk_test_51PkgeLHkmv4NiwRYoU7qXRWvLRJc3ALKn5mSKLsKLrxZTCpAjNQ1YnqPEI3BV7zH5uWdxdGWy3VMWLgxaUDMI3Nd0087KOB3NE">
+            <Navigation_Comp />
+          </StripeProvider>
+        </PersistGate>
+      </Provider>
+      {/* <Appp/> */}
+    </>
   );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+};
 
 export default App;

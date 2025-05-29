@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">OpHop</string>
+    <string name="facebook_app_id">1975469632391920</string>
+    <string name="fb_login_protocol_scheme">fb1975469632391920</string>
+    <string name="facebook_client_token">596616160118107</string>
 </resources>
