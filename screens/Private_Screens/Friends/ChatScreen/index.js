@@ -1,6 +1,6 @@
 import notifee, { AndroidImportance } from '@notifee/react-native';
 import React, { useEffect, useState } from "react";
-import { PermissionsAndroid, Platform, Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 import Button_Comp from "../../../../utilities/Button_Comp";
 import { light_theme, theme_color } from "../../../../utilities/colors";
 import { Sidebar_Toggle_Bar } from "../../../Sidebar/Sidebar_Toggle";
@@ -18,11 +18,8 @@ import Flex_Box from "../../../../utilities/Flex_Box";
 import Modal_Comp from "../../../../utilities/Modal_Comp";
 // import { VisionCamera } from "./VisionCamera";
 import messaging from '@react-native-firebase/messaging';
+import { requestNotificationPermission } from '../../../../src/services/notificationHandler';
 
-// Android notification channel constants
-const ANDROID_CHANNEL_ID = 'chat_messages';
-const ANDROID_CHANNEL_NAME = 'Chat Messages';
-const ANDROID_IMPORTANCE_HIGH = 4;
 
 const ChatScreen = ({ navigation }) => {
   const IsFocused = useIsFocused();
@@ -41,46 +38,6 @@ const ChatScreen = ({ navigation }) => {
   const [lastMessageId, setLastMessageId] = useState(null);
   const room_id = state?.room_id;
 
-  // console.warn({ room_id });
-
-  // Request notification permissions
-  const requestNotificationPermission = async () => {
-    try {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-          {
-            title: "Notification Permission",
-            message: "App needs notification permission to send you messages",
-            buttonNeutral: "Ask Me Later",
-            buttonNegative: "Cancel",
-            buttonPositive: "OK"
-          }
-        );
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('Notification permission granted');
-        } else {
-          console.log('Notification permission denied');
-        }
-      }
-
-      // Request FCM permission
-      const authStatus = await messaging().requestPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-      if (enabled) {
-        console.log('FCM Authorization status:', authStatus);
-        // Get FCM token
-        const token = await messaging().getToken();
-        console.log('FCM Token:', token);
-      }
-    } catch (error) {
-      console.error('Permission request error:', error);
-    }
-  };
-
   // Set up notification channels and handlers
   useEffect(() => {
     const setupNotifications = async () => {
@@ -91,8 +48,8 @@ const ChatScreen = ({ navigation }) => {
         if (Platform.OS === 'android') {
           try {
             await notifee.createChannel({
-              id: ANDROID_CHANNEL_ID,
-              name: ANDROID_CHANNEL_NAME,
+              id: "chat_messages",
+              name: "Chat Messages",
               importance: AndroidImportance.HIGH,
               vibration: true,
               sound: 'default',

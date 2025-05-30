@@ -1,10 +1,10 @@
-import messaging from '@react-native-firebase/messaging';
-import { Platform, PermissionsAndroid } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
-import { navigate, routeExists } from './navigationService';
-import firebase from '@react-native-firebase/app';
 import notifee, { AndroidImportance } from '@notifee/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import firebase from '@react-native-firebase/app';
+import messaging from '@react-native-firebase/messaging';
+import { Alert, PermissionsAndroid, Platform } from 'react-native';
+import { check, checkNotifications, PERMISSIONS, request, requestNotifications, RESULTS } from 'react-native-permissions';
+import { navigate, routeExists } from './navigationService';
 // Check if notifications are enabled
 export async function checkNotificationPermission() {
   try {
@@ -14,7 +14,7 @@ export async function checkNotificationPermission() {
     } else {
       const authStatus = await messaging().hasPermission();
       return authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-             authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
     }
   } catch (error) {
     console.error('Error checking notification permission:', error);
@@ -23,44 +23,66 @@ export async function checkNotificationPermission() {
 }
 
 // Request permission for notifications
-export async function requestUserPermission() {
+export async function requestNotificationPermission() {
   try {
-    if (Platform.OS === 'android') {
-      // For Android 13 and above
-      if (Platform.Version >= 33) {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-          {
-            title: 'Notification Permission',
-            message: 'This app needs notification permission to send you important updates.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          }
-        );
-        
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('Notification permission granted');
-          return true;
-        } else {
-          console.log('Notification permission denied');
-          return false;
-        }
-      }
-    } else if (Platform.OS === 'ios') {
-      const authStatus = await messaging().requestPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+    const { status } = await checkNotifications();
 
-      if (enabled) {
-        console.log('Authorization status:', authStatus);
+    if (status !== RESULTS.GRANTED) {
+      const { status: requestStatus } = await requestNotifications([
+        "alert",
+        "badge",
+        "sound",
+        "criticalAlert",
+        'providesAppSettings',
+        'provisional',
+      ]);
+
+      const validStatuses = new Set([
+        RESULTS.GRANTED,
+        RESULTS.UNAVAILABLE,
+        RESULTS.LIMITED,
+      ]);
+
+      if (validStatuses.has(requestStatus as any)) {
         return true;
       }
+    } else {
+      return true;
     }
-    return false;
   } catch (error) {
     console.error('Error requesting notification permission:', error);
+    return false;
+  }
+}
+
+export async function requestLocationPermission() {
+  try {
+    const permission = Platform.select({
+      ios: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
+      android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
+    });
+
+    if (!permission) {
+      return false;
+    }
+
+    const status = await check(permission);
+    if (status !== RESULTS.GRANTED) {
+      const requestStatus = await request(permission);
+      const validStatuses = new Set([
+        RESULTS.GRANTED,
+        RESULTS.UNAVAILABLE,
+        RESULTS.LIMITED,
+      ]);
+
+      if (validStatuses.has(requestStatus as any)) {
+        return true;
+      }
+    } else {
+      return false
+    }
+  } catch (error) {
+    console.error('Error requesting location permission:', error);
     return false;
   }
 }
@@ -69,7 +91,7 @@ export async function requestUserPermission() {
 export async function ensureNotificationPermission() {
   const hasPermission = await checkNotificationPermission();
   if (!hasPermission) {
-    const granted = await requestUserPermission();
+    const granted = await requestNotificationPermission();
     if (granted) {
       // Setup notification channels after permission is granted
       await setupNotificationChannels();
@@ -102,7 +124,7 @@ export async function getFCMToken() {
 export function onMessageReceived() {
   return messaging().onMessage(async remoteMessage => {
     console.log('Received foreground message:', remoteMessage);
-    
+
     // Handle different notification types
     switch (remoteMessage.data.type) {
       case 'message':
@@ -114,7 +136,7 @@ export function onMessageReceived() {
               text: 'View',
               onPress: () => {
                 if (routeExists('Chat')) {
-                  navigate('Chat', { 
+                  navigate('Chat', {
                     chatId: remoteMessage.data.chatId,
                     senderId: remoteMessage.data.senderId,
                     senderName: remoteMessage.data.senderName,
@@ -225,11 +247,11 @@ export async function checkInitialNotification() {
 function handleNotificationNavigation(remoteMessage) {
   try {
     const { type, chatId, senderId, senderName, message } = remoteMessage.data;
-    
+
     switch (type) {
       case 'message':
         if (routeExists('Chat')) {
-          navigate('Chat', { 
+          navigate('Chat', {
             chatId,
             senderId,
             senderName,

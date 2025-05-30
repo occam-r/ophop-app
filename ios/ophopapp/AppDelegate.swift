@@ -1,9 +1,10 @@
 import UIKit
+import GoogleSignIn
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
 import Firebase
-import FacebookCore
+import FBSDKCoreKit
 import GoogleMaps
 
 @main
@@ -39,7 +40,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     return true
   }
 
-  override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+  func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
     return ApplicationDelegate.shared.application(
             app,
             open: url,
