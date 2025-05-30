@@ -2,6 +2,8 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import Firebase
+import FacebookCore
 import GoogleMaps
 
 @main
@@ -15,6 +17,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    FirebaseApp.configure()
     if let MAPS_API_KEY = Bundle.main.object(forInfoDictionaryKey: "AIzaSyB26O03KJruUOgX40ZQK1Y-QKT8vSIISCM") as? String {
         GMSServices.provideAPIKey(MAPS_API_KEY)
     }
@@ -35,6 +38,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     return true
   }
+
+  override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+    return ApplicationDelegate.shared.application(
+            app,
+            open: url,
+            sourceApplication: options[UIApplication.OpenURLOptionsKey.sourceApplication] as? String,
+            annotation: options[UIApplication.OpenURLOptionsKey.annotation]
+        ) || GIDSignIn.sharedInstance.handle(url)
+  }
+  
 }
 
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
